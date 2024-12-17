@@ -1,0 +1,13 @@
+services:
+  mba-form-server:
+    build: .
+    ports:
+      - "5022:5022"
+    volumes:
+      - mba-form-server:/var/lib/
+    environment:
+      - MONGO_URI=${MONGO_URI}
+      - ORIGINS=${ORIGINS}
+    restart: always
+volumes:
+  mba-form-server:
