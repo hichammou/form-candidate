@@ -15,7 +15,14 @@ const __dirname = path.dirname(__filename); // get the name of the directory
 // Initialize express app
 const app = express();
 // Static files
-app.use(cors({ origin: process.env.ORIGINS.split(",") }));
+app.use(
+  cors({
+    origin: process.env.ORIGINS.split(","),
+    methods: "GET,POST",
+  })
+);
+
+console.log(process.env.ORIGINS.split(","));
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
