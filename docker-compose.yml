@@ -5,9 +5,11 @@ services:
       - "5022:5022"
     volumes:
       - mba-form-server:/var/lib/
+      - mba-uploads:/app/uploads
     environment:
       - MONGO_URI=${MONGO_URI}
       - ORIGINS=${ORIGINS}
     restart: always
 volumes:
   mba-form-server:
+  mba-uploads:
