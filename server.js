@@ -4,7 +4,7 @@ import express from "express";
 import mongoose from "mongoose";
 import bodyParser from "body-parser";
 import { Candidate } from "./candidateModel.js";
-import { upload } from "./multer.js";
+import { s3, upload } from "./multer.js";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -21,8 +21,6 @@ app.use(
     methods: "GET,POST",
   })
 );
-
-console.log(process.env.ORIGINS.split(","));
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
@@ -60,8 +58,26 @@ app.post("/api/candidate", upload.single("profilePhoto"), async (req, res) => {
       contributionToTeam,
     } = req.body;
 
-    // Profile photo filename will be in req.file.filename
-    const profilePhoto = req.file ? `/uploads/${req.file.filename}` : null;
+    const file = req.file;
+    let profilePhoto = null;
+
+    if (file) {
+      const params = {
+        Bucket: process.env.CLOUDFLARE_BUCKET_NAME, // Your R2 bucket name
+        Key: `uploads/${Date.now()}-${file.originalname}`, // Filename in R2
+        Body: file.buffer, // File data in memory
+        ContentType: file.mimetype, // MIME type
+        ACL: "public-read", // Set to 'public-read' to make it accessible via a URL
+      };
+
+      try {
+        const data = await s3.upload(params).promise();
+        profilePhoto = data.Key;
+      } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "Error uploading file" });
+      }
+    }
 
     // Create a new candidate document
     const newCandidate = new Candidate({
@@ -85,6 +101,7 @@ app.post("/api/candidate", upload.single("profilePhoto"), async (req, res) => {
       candidate: newCandidate,
     });
   } catch (error) {
+    console.error(error);
     res
       .status(400)
       .json({ message: "Error adding candidate", error: error.message });
